@@ -2,12 +2,12 @@
 
 namespace App\Controllers;
 
-use App\Models\ShoeModel;
+use App\Models\UserModel;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\API\ResponseTrait;
 use Firebase\JWT\JWT;
 
-class Shoe extends ResourceController
+class User extends ResourceController
 {
     use ResponseTrait;
 
@@ -26,7 +26,7 @@ class Shoe extends ResourceController
             return $this->fail('Invalid Token');
         }
 
-        $model = new ShoeModel();
+        $model = new UserModel();
         $data = $model->findAll();
         return $this->respond($data, 200);
     }
@@ -46,7 +46,7 @@ class Shoe extends ResourceController
             return $this->fail('Invalid Token');
         }
 
-        $model = new ShoeModel();
+        $model = new UserModel();
         $data = $model->getWhere(['id' => $id])->getResult();
         if ($data) {
             return $this->respond($data);
@@ -57,43 +57,15 @@ class Shoe extends ResourceController
 
     public function create()
     {
-        $key = getenv('JWT_SECRET');
-        $header = $this->request->getServer('HTTP_AUTHORIZATION');
-
-        if (!$header) return $this->failUnauthorized('Unauthorized');
-
-        $token = explode(' ', $header)[1];
-
-        try {
-            JWT::decode($token, $key, ['HS256']);
-        } catch (\Throwable $th) {
-            return $this->fail('Invalid Token');
-        }
-
-        $model = new ShoeModel();
+        $model = new UserModel();
 
         $data = [
-            'brandname' => $this->request->getPost('brandname'),
-            'shoename' => $this->request->getPost('shoename'),
-            'size' => $this->request->getPost('size'),
-            'color' => $this->request->getPost('color'),
-            'condition' => $this->request->getPost('condition'),
-            'price' => $this->request->getPost('price'),
-            'contactinfo' => $this->request->getPost('contactinfo'),
+            'name' => $this->request->getVar('name'),
+            'email' => $this->request->getVar('email'),
+            'password' => password_hash($this->request->getVar('password'), PASSWORD_BCRYPT)
         ];
 
-        $data = json_decode(file_get_contents("php://input"));
-
-        // $data = $this->request->getPost();
         $model->insert($data);
-
-        $response = [
-            'status' => 201,
-            'error' => null,
-            'messages' => [
-                'success' => 'Data Saved'
-            ]
-        ];
 
         return $this->respondCreated($data, 201);
     }
@@ -113,33 +85,25 @@ class Shoe extends ResourceController
             return $this->fail('Invalid Token');
         }
 
-        $model = new ShoeModel();
+        $model = new UserModel();
 
         $json = $this->request->getJSON();
 
         if ($json) {
             $data = [
-                'brandname' => $json->brandname,
-                'shoename' => $json->shoename,
-                'size' => $json->size,
-                'color' => $json->color,
-                'condition' => $json->condition,
-                'price' => $json->price,
-                'contactinfo' => $json->contactinfo,
+                'name' => $json->name,
+                'email' => $json->email,
+                'password' => password_hash($json->password, PASSWORD_BCRYPT)
             ];
         } else {
             $input = $this->request->getRawInput();
             $data = [
-                'brandname' => $this->request->getPost('brandname'),
-                'shoename' => $this->request->getPost('shoename'),
-                'size' => $this->request->getPost('size'),
-                'color' => $this->request->getPost('color'),
-                'condition' => $this->request->getPost('condition'),
-                'price' => $this->request->getPost('price'),
-                'contactinfo' => $this->request->getPost('contactinfo'),
+                'name' => $this->request->getVar('name'),
+                'email' => $this->request->getVar('password'),
+                'password' => password_hash($this->request->getVar('password'), PASSWORD_BCRYPT)
             ];
         }
-        // Insert to Database
+        
         $model->update($id, $data);
         $response = [
             'status' => 200,
@@ -165,8 +129,8 @@ class Shoe extends ResourceController
         } catch (\Throwable $th) {
             return $this->fail('Invalid Token');
         }
-        
-        $model = new ShoeModel();
+
+        $model = new UserModel();
         $data = $model->find($id);
         if ($data) {
             $model->delete($id);
